@@ -6,7 +6,6 @@ variable "equipe" {
 variable "zone" {
   type        = string
   description = "Zone GCP d'hébergement du cluster zonal"
-  default     = "europe-west9-a"
 }
 
 variable "network_id" {
