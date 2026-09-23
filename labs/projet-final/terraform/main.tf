@@ -20,14 +20,18 @@ module "compute" {
   source = "./modules/compute"
 
   equipe = var.equipe
-  zone = var.zone
-  network_id = var.network_id
-  subnetwork_id = var.subnetwork_id
-  pods_range_name = var.pods_range_name
-  services_range_name = var.services_range_name
-  master_cidr = var.master_cidr
-  node_count = var.node_count
-  machine_type = var.machine_type
+  zone   = var.zone
+
+  # --- LIAISON DYNAMIQUE AVEC LES OUTPUTS RÉSEAU ---
+  network_id    = module.reseau.network_id     
+  subnetwork_id = module.reseau.subnetwork_id
+  pods_range_name     = module.reseau.pods_range_name
+  services_range_name = module.reseau.services_range_name  
+
+  # --- CONFIGURATION GKE ---
+  master_cidr           = var.master_cidr
+  node_count            = var.node_count
+  machine_type          = var.machine_type
   service_account_email = var.service_account_email
-  environment = var.environment
+  environment           = var.environment
 }
