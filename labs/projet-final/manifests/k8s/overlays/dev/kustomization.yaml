@@ -26,7 +26,7 @@ patches:
   patch: |-
     - op: replace
       path: /data/SEUIL_TEMPERATURE_C
-      value: 10
+      value: "10"
     - op: replace
       path: /data/NIVEAU_JOURNAL
       value: debug
