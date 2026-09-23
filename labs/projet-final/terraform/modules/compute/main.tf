@@ -8,12 +8,12 @@ resource "google_container_cluster" "primary" {
   network    = var.network_id    # rattachement au VPC du module reseau
   subnetwork = var.subnetwork_id # rattachement au sous-reseau du module reseau
 
-  ip_allocation_policy {                                   # active le mode VPC natif
+  ip_allocation_policy {                                    # active le mode VPC natif
     cluster_secondary_range_name  = var.pods_range_name     # plage secondaire dediee aux pods
     services_secondary_range_name = var.services_range_name # plage secondaire dediee aux services
   }
 
-  private_cluster_config {                   # configuration des noeuds prives
+  private_cluster_config {                    # configuration des noeuds prives
     enable_private_nodes    = true            # aucun noeud n'a d'IP publique
     enable_private_endpoint = false           # le plan de controle reste joignable en public
     master_ipv4_cidr_block  = var.master_cidr # plage IP interne reservee au plan de controle

@@ -3,23 +3,24 @@
 # ==========================================
 
 # --- Paramètres Globaux ---
-project_id  = "foodtrack-prod-project-id" # ID du projet GCP de Production
+project_id  = "form-gke-eleve01-4621" # ID du projet GCP de Production
 equipe      = "a"
-region      = "europe-west9"              # Paris
-zone        = "europe-west9-a"
-environment = "prod"
+region      = "europe-west8" # Milan
+zone        = "europe-west8-a"
+
 
 # --- Paramètres Réseau ---
-subnet_cidr     = "10.20.0.0/20"
-ssh_source_cidr = "192.168.1.50/32"       # Restreint uniquement à l'IP du Bastion / VPN d'exploitation
+subnet_cidr   = "10.0.0.0/20"
+pods_cidr     = "10.4.0.0/14"
+services_cidr = "10.8.0.0/20"
+master_cidr   = "172.16.0.0/28"
+ssh_source_cidr = "35.235.240.0/20"
 
 # --- Paramètres Compute / GKE ---
-master_cidr           = "172.16.2.0/28"   # Plage CIDR dédiée au master de Prod
-node_count            = 3                 # 3 nœuds minimum pour le quorum et la tolérance aux pannes
+node_count            = 2               # 3 nœuds minimum pour le quorum et la tolérance aux pannes
 node_disk_size_gb     = 50
 machine_type          = "e2-standard-2"
 bastion_machine_type  = "e2-micro"
-service_account_email = "618189904543-compute@developer.gserviceaccount.com"
 
 # --- Configuration GitHub / CI-CD ---
 github_owner = "diogeek"
