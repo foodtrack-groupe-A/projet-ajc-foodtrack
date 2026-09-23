@@ -41,3 +41,11 @@ module "compute" {
 
   depends_on = [module.reseau]
 }
+
+module "wif_github" {
+  source = "./modules/wif-github"
+
+  project_id   = var.project_id
+  github_owner = var.github_owner
+  github_repo  = var.github_repo
+}

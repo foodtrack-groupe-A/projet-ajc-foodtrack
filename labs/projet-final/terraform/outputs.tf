@@ -31,3 +31,23 @@ output "artifact_registry_url" {
   description = "Adresse du dépôt Docker Artifact Registry"
   value       = module.stockage.artifact_registry_url
 }
+
+output "wif_provider_name" {
+  description = "Nom complet du fournisseur OIDC par Github Actions"
+  value       = module.wif_github.wif_provider_name
+}
+
+output "ci_service_account_email" {
+  description = "Nom complet du fournisseur OIDC par Github Actions"
+  value       = module.wif_github.ci_service_account_email
+}
+
+output "wif_principal_set" {
+  description = "Nom complet du fournisseur OIDC par Github Actions"
+  value       = module.wif_github.principal_set
+}
+
+output "wif_project_number" {
+  description = "Nom complet du fournisseur OIDC par Github Actions"
+  value       = module.wif_github.project_number
+}
