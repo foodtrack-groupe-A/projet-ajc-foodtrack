@@ -81,3 +81,13 @@ variable "github_repo" {
   type        = string
   description = "Nom du dépôt GitHub"
 }
+
+variable "pods_cidr" {
+  description = "Plage secondaire reservee aux pods GKE"
+  type        = string
+}
+
+variable "services_cidr" {
+  description = "Plage secondaire reservee aux services GKE"
+  type        = string
+}

@@ -1,10 +1,10 @@
 module "reseau" {
   source = "./modules/reseau"
 
-  project_id = var.project_id
-  equipe = var.equipe
-  region = var.region
-  subnet_cidr = var.subnet_cidr
+  project_id      = var.project_id
+  equipe          = var.equipe
+  region          = var.region
+  subnet_cidr     = var.subnet_cidr
   ssh_source_cidr = var.ssh_source_cidr
 }
 
@@ -12,8 +12,8 @@ module "stockage" {
   source = "./modules/stockage"
 
   project_id = var.project_id
-  equipe = var.equipe
-  region = var.region
+  equipe     = var.equipe
+  region     = var.region
 }
 
 module "compute" {
@@ -23,10 +23,10 @@ module "compute" {
   zone   = var.zone
 
   # --- LIAISON DYNAMIQUE AVEC LES OUTPUTS RÉSEAU ---
-  network_id    = module.reseau.network_id     
-  subnetwork_id = module.reseau.subnetwork_id
+  network_id          = module.reseau.network_id
+  subnetwork_id       = module.reseau.subnetwork_id
   pods_range_name     = module.reseau.pods_range_name
-  services_range_name = module.reseau.services_range_name  
+  services_range_name = module.reseau.services_range_name
 
   # --- CONFIGURATION GKE ---
   master_cidr           = var.master_cidr
