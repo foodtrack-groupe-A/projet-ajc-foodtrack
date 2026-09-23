@@ -1,0 +1,19 @@
+name: CI/CD FoodTrack
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Terraform fmt & validate
+        run: |
+          cd terraform
+          terraform fmt -check -recursive
+          terraform init -backend=false
+          terraform validate
