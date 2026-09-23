@@ -36,6 +36,7 @@ resource "google_container_node_pool" "primary_nodes" {
   node_config {
     preemptible  = false
     machine_type = var.machine_type
+    disk_type    = "pd-standard"
     disk_size_gb = var.node_disk_size_gb # Utilisation de la variable pour le disque GKE
 
     # Compte de service dédié
@@ -59,7 +60,7 @@ resource "google_compute_instance" "bastion" {
   machine_type = var.bastion_machine_type
   zone         = var.zone
 
-  tags = ["bastion", "foodtrack-${var.equipe}"]
+  tags = ["bastion", "foodtrack-${var.equipe}-bastion"]
 
   boot_disk {
     initialize_params {
@@ -71,11 +72,6 @@ resource "google_compute_instance" "bastion" {
   network_interface {
     network    = var.network_id
     subnetwork = var.subnetwork_id
-
-    # Interface avec une IP publique pour permettre l'accès SSH à distance
-    access_config {
-      // Ephemeral public IP
-    }
   }
 
   metadata = {
