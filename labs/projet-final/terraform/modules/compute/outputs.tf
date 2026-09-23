@@ -13,3 +13,13 @@ output "ca_certificate" {
   description = "Certificat CA du cluster pour la configuration de kubectl"
   sensitive   = true
 }
+
+output "bastion_name" {
+  description = "Nom de l'instance bastion"
+  value       = google_compute_instance.bastion.name
+}
+
+output "bastion_internal_ip" {
+  description = "Adresse IP privée du bastion"
+  value       = google_compute_instance.bastion.network_interface[0].network_ip
+}

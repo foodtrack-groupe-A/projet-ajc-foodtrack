@@ -21,3 +21,13 @@ output "backups_bucket_url" {
 output "logs_bucket_url" {
   value = module.stockage.logs_bucket_url
 }
+
+output "artifact_registry_repository_name" {
+  description = "Nom du dépôt Docker Artifact Registry"
+  value       = module.stockage.artifact_registry_repository_name
+}
+
+output "artifact_registry_url" {
+  description = "Adresse du dépôt Docker Artifact Registry"
+  value       = module.stockage.artifact_registry_url
+}

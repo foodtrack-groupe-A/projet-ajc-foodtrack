@@ -11,12 +11,23 @@ resource "google_compute_network" "vpc" {
 }
 
 resource "google_compute_subnetwork" "subnet" {
-  project                  = var.project_id
-  name                     = "foodtrack-${var.equipe}-subnet"
-  region                   = var.region
-  network                  = google_compute_network.vpc.id
-  ip_cidr_range            = var.subnet_cidr
+  name          = "foodtrack-${var.equipe}-subnet"
+  project       = var.project_id
+  region        = var.region
+  network       = google_compute_network.vpc.id
+  ip_cidr_range = var.subnet_cidr
+
   private_ip_google_access = true
+
+  secondary_ip_range {
+    range_name    = "foodtrack-${var.equipe}-pods"
+    ip_cidr_range = var.pods_cidr
+  }
+
+  secondary_ip_range {
+    range_name    = "foodtrack-${var.equipe}-services"
+    ip_cidr_range = var.services_cidr
+  }
 }
 resource "google_compute_router" "router" {
   project = var.project_id

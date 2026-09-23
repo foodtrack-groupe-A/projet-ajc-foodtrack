@@ -36,8 +36,10 @@ resource "google_container_node_pool" "primary_nodes" {
   node_config {
     preemptible  = false
     machine_type = var.machine_type
+    disk_type    = "pd-standard"
+    disk_size_gb = var.node_disk_size_gb # Utilisation de la variable pour le disque GKE
 
-    # Compte de service dédié (Bonne pratique sécurité)
+    # Compte de service dédié
     service_account = var.service_account_email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
@@ -49,5 +51,37 @@ resource "google_container_node_pool" "primary_nodes" {
     }
 
     tags = ["gke-node", "foodtrack-${var.equipe}"]
+  }
+}
+
+# --- INSTANCE BASTION ---
+resource "google_compute_instance" "bastion" {
+  name         = "foodtrack-${var.equipe}-bastion"
+  machine_type = var.bastion_machine_type
+  zone         = var.zone
+
+  allow_stopping_for_update = true
+
+  tags = ["bastion", "foodtrack-${var.equipe}-bastion"]
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+      size  = 10
+    }
+  }
+
+  network_interface {
+    network    = var.network_id
+    subnetwork = var.subnetwork_id
+  }
+
+  metadata = {
+    enable-oslogin = "TRUE"
+  }
+
+  service_account {
+    email  = var.service_account_email
+    scopes = ["cloud-platform"]
   }
 }
