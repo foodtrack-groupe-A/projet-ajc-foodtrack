@@ -1,3 +1,8 @@
+locals {
+  pods_range_name     = "foodtrack-${var.equipe}-pods"
+  services_range_name = "foodtrack-${var.equipe}-services"
+}
+
 resource "google_compute_network" "vpc" {
   project                 = var.project_id
   name                    = "foodtrack-${var.equipe}-vpc"
@@ -13,7 +18,6 @@ resource "google_compute_subnetwork" "subnet" {
   ip_cidr_range            = var.subnet_cidr
   private_ip_google_access = true
 }
-
 resource "google_compute_router" "router" {
   project = var.project_id
   name    = "foodtrack-${var.equipe}-router"

@@ -19,9 +19,11 @@ output "subnetwork_name" {
 }
 
 output "pods_range_name" {
-  value = google_compute_subnetwork.subnet.secondary_ip_range[0].range_name
+  description = "Nom de la plage secondaire reservee aux pods"
+  value       = local.pods_range_name
 }
 
 output "services_range_name" {
-  value = google_compute_subnetwork.subnet.secondary_ip_range[1].range_name
+  description = "Nom de la plage secondaire reservee aux services"
+  value       = local.services_range_name
 }
