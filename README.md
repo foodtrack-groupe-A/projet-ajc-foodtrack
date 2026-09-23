@@ -1,6 +1,7 @@
 # projet-ajc-foodtrack
 
 Dépôt du projet final de la formation AJC Ingénieur Cloud OPS
+
 # Dimensionnement GKE
 
 Le Bastion SSH (e2-micro)
@@ -24,18 +25,95 @@ Nous avons également consideré Helm pour réaliser ce projet, mais après de p
 
 ## Changements effectués par environnement dans Kustomize :
 
-| Fichier concerné dans la base     | Cible                           | Path de l'attribut patched              | Valeur dans la base                                                  | Valeur dans l'environnement de développement | Valeur dans l'environnement de test        | Valeur dans l'environnement de production  | <div style="width:5=300px">Justification</div>                                                                                                                                                                                                                                                                                                |
-| --------------------------------- | ------------------------------- | --------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------ | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 00-namespace.yaml                 | Le Namespace "foodtrack"        | /metadata/name                          | foodtrack                                                            | foodtrack-dev                                | foodtrack-test                             | foodtrack-prod                             | Il est demandé dans le cahier des charges d'avoir un namespace différent par environnement                                                                                                                                                                                                                                                    |
-| 00-namespace.yaml                 | Le Namespace "foodtrack"        | /metadata/labels/foodtrack.example~1env | dev                                                                  | dev                                          | test                                       | prod                                       | foodtrack.example/env est un indicateur de l'environnement comme label assigné au namespace.                                                                                                                                                                                                                                                  |
-| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/SEUIL_TEMPERATURE_C               | 4                                                                    | 10                                           | 5                                          | 4                                          | En développement, 10 est utilisé comme une variable placeholder, choisie arbitrairement. On suppose une situation où 5 s'avère être une valeur fonctionnelle en environnement de test, mais on utilisera 4 en environnement de production pour une couche supplémentaire de sécurité en déclenchant des alarmes à une température plus basse. |
-| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/NIVEAU_JOURNAL                    | debug                                                                | debug                                        | info                                       | warn                                       | En dev puis en test, on utilise des niveaux plus bas car on provoquera volontairement des alertes. En environnement de production, on attend un niveau plus élevé de log car une alerte est réelle                                                                                                                                            |
-| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/index.html                        | [...]\<p>Environnement : a differencier par environnement.\</p>[...] | [...]\<p\>Environnement : dev.\</p\>[...]    | [...]\<p\>Environnement : test.\</p\>[...] | [...]\<p\>Environnement : prod.\</p\>[...] | La page de l'API doit afficher l'environnement actuel                                                                                                                                                                                                                                                                                         |
-| 03-deployment-portail-qualite.yml | Le Deployment "portail-qualite" | /spec/replicas                          | 2                                                                    | 1                                            | 2                                          | 3                                          | On n'a pas besoin de plus de répliques en dev car on ne fait que développer l'app, pas tester sa disponibilité; On en met 2 en test pour faire ces tests de disponibilité puis 3 en production pour garantir sa disponibilité auprès des utilisateurs.                                                                                        |
-| 03-deployment-portail-qualite.yml | Le Deployment "portail-qualite" | /spec/strategy/rollingUpdate/maxSurge   | 1                                                                    | 1                                            | 1                                          | 2                                          | Notre budget étant réduit, on n'alloue que 2 pods en Surge à l'environnement de producton pour garantir la disponibilité de l'app lors des updates.                                                                                                                                                                                           |
-| 04-deployment-api-capteurs.yml    | Le Deployment "api-capteurs"    | /spec/replicas                          | 2                                                                    | 1                                            | 2                                          | 3                                          | *Voir justification pour le Deployment "portail-qualite"*                                                                                                                                                                                                                                                                                     |
-| 04-deployment-api-capteurs.yml    | Le Deployment "api-capteurs"    | /spec/strategy/rollingUpdate/maxSurge   | 1                                                                    | 1                                            | 1                                          | 2                                          | *Voir justification pour le Deployment "portail-qualite"*                                                                                                                                                                                                                                                                                     |
-|                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
-|                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
-|                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
-|                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
+| Fichier concerné dans la base     | Cible                           | Path de l'attribut patched                                   | Valeur dans la base                                                  | Valeur dans l'environnement de développement | Valeur dans l'environnement de test        | Valeur dans l'environnement de production  | <div style="width:5=300px">Justification</div>                                                                                                                                                                                                                                                                                                |
+| --------------------------------- | ------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------ | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 00-namespace.yaml                 | Le Namespace "foodtrack"        | /metadata/name                                               | foodtrack                                                            | foodtrack-dev                                | foodtrack-test                             | foodtrack-prod                             | Il est demandé dans le cahier des charges d'avoir un namespace différent par environnement                                                                                                                                                                                                                                                    |
+| 00-namespace.yaml                 | Le Namespace "foodtrack"        | /metadata/labels/foodtrack.example~1env                      | dev                                                                  | dev                                          | test                                       | prod                                       | foodtrack.example/env est un indicateur de l'environnement comme label assigné au namespace.                                                                                                                                                                                                                                                  |
+| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/SEUIL_TEMPERATURE_C                                    | 4                                                                    | 10                                           | 5                                          | 4                                          | En développement, 10 est utilisé comme une variable placeholder, choisie arbitrairement. On suppose une situation où 5 s'avère être une valeur fonctionnelle en environnement de test, mais on utilisera 4 en environnement de production pour une couche supplémentaire de sécurité en déclenchant des alarmes à une température plus basse. |
+| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/NIVEAU_JOURNAL                                         | debug                                                                | debug                                        | info                                       | warn                                       | En dev puis en test, on utilise des niveaux plus bas car on provoquera volontairement des alertes. En environnement de production, on attend un niveau plus élevé de log car une alerte est réelle                                                                                                                                            |
+| 01-configmap.yaml                 | La ConfigMap "foodtrack-config" | /data/index.html                                             | [...]\<p>Environnement : a differencier par environnement.\</p>[...] | [...]\<p\>Environnement : dev.\</p\>[...]    | [...]\<p\>Environnement : test.\</p\>[...] | [...]\<p\>Environnement : prod.\</p\>[...] | La page de l'API doit afficher l'environnement actuel                                                                                                                                                                                                                                                                                         |
+| 03-deployment-portail-qualite.yml | Le Deployment "portail-qualite" | /spec/replicas                                               | 2                                                                    | 1                                            | 2                                          | 3                                          | On n'a pas besoin de plus de répliques en dev car on ne fait que développer l'app, pas tester sa disponibilité; On en met 2 en test pour faire ces tests de disponibilité puis 3 en production pour garantir sa disponibilité auprès des utilisateurs.                                                                                        |
+| 03-deployment-portail-qualite.yml | Le Deployment "portail-qualite" | /spec/strategy/rollingUpdate/maxSurge                        | 1                                                                    | 1                                            | 1                                          | 2                                          | Notre budget étant réduit, on n'alloue que 2 pods en Surge à l'environnement de producton pour garantir la disponibilité de l'app lors des updates.                                                                                                                                                                                           |
+| 04-deployment-api-capteurs.yml    | Le Deployment "api-capteurs"    | /spec/replicas                                               | 2                                                                    | 1                                            | 2                                          | 3                                          | *Voir justification pour le Deployment "portail-qualite"*                                                                                                                                                                                                                                                                                     |
+| 04-deployment-api-capteurs.yml    | Le Deployment "api-capteurs"    | /spec/strategy/rollingUpdate/maxSurge                        | 1                                                                    | 1                                            | 1                                          | 2                                          | *Voir justification pour le Deployment "portail-qualite"*                                                                                                                                                                                                                                                                                     |
+| 05-statefulset-cache-releves.yaml | Le StatefulSet "cache-reveles"  | /spec/volumeClaimTemplates/0/spec/resources/requests/storage | 10Gi                                                                 | 10Gi                                         | 30Gi                                       | 50Gi                                       | On aura besoin de plus de stockage lors du déploiement en production. On alloue 30 à test pour ne pas provoquer des erreurs à cause du manque de cache, mais 50Gi ne sont pas nécessaires.                                                                                                                                                    |
+
+Nous avons aussi ajouté deux snippet de YAML dans chaque fichier `kustomization.yaml` :
+
+##### secretGenerator
+
+```yaml
+secretGenerator:
+- name: foodtrack-api-config
+  envs:
+  - secret.env
+```
+
+C'est un générateur de secret. Une approche qui utilise un fichier de variables d'environnement (`envs`, plutôt que `literals` ou `files`) permet de récupérer les secrets dans le fichier `secret.env`, ajouté au .gitignore, lors du build, sans jamais les écrire en clair dans un manifest (ce que fait `literals`) ou un fichier texte (ce que fait `files`). Les fichiers d'environnement ne sont pas push sur notre dépôt.
+
+##### Fichier de patch pour le Horizontal Pod Autoscaler
+
+```yaml
+- path: HPA-foodtrack-patch.yaml
+```
+
+qui ajoute les patches contenus dans le fichier `HPA-foodtrack-patch.yaml`, qui remplacent les valeurs dans `HPA-foodtrack.yaml` et sont les suivants :
+
+- Environnement de développement :
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-capteurs
+spec:
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+- Environnement de test :
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-capteurs
+spec:
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+- Environnement de production :
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-capteurs
+spec:
+  minReplicas: 3
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+```
+
+On justifie ces patches par les besoins plus grands dans un environnement de production que dans un environnement de développement ou de testing en quantité de répliques, car la disponibilité de l'application est une priorité ; Du côté de l'utilisation CPU, on peut supporter une utilisation plus élevée en environnement de développement ou de test pour tester l'application mais on préfère la réduire en production pour éviter des crashes. 
