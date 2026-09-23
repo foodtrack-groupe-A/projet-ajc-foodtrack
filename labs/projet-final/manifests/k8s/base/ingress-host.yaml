@@ -4,7 +4,7 @@ metadata:
   name: ingress-foodtrack
   namespace: foodtrack
 spec:
-  ingressClassName: deploy
+  ingressClassName: gce
   rules:
   - host: foodtrack
     http:
@@ -23,10 +23,3 @@ spec:
             name: api-capteurs
             port:
               number: 8080
-      - path: /releves/
-        pathType: Prefix
-        backend:
-          service:
-            name: cache-releves
-            port:
-              number: 6379
