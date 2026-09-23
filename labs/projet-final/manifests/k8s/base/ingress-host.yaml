@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  namespace: foodtrack
+spec:
+  ingressClassName: deploy
+  rules:
+  - host: foodtrack
+    http:
+      paths:
+      - path: /qualite/
+        pathType: Prefix
+        backend:
+          service:
+            name: portail-qualite
+            port:
+              number: 8080
+      - path: /capteurs/
+        pathType: Prefix
+        backend:
+          service:
+            name: api-capteurs
+            port:
+              number: 8080
+      - path: /releves/
+        pathType: Prefix
+        backend:
+          service:
+            name: cache-releves
+            port:
+              number: 6379

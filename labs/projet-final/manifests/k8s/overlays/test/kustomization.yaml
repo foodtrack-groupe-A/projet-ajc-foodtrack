@@ -1,0 +1,70 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+namespace: foodtrack-test
+
+secretGenerator:
+- name: foodtrack-api-config
+  envs:
+  - secret.env
+
+patches:
+- target:
+    kind: Namespace
+    name: foodtrack
+  patch: |-
+    - op: replace
+      path: /metadata/name
+      value: foodtrack-test
+    - op: replace
+      path: /metadata/labels/foodtrack.example~1env
+      value: test
+- target:
+    kind: ConfigMap
+    name: foodtrack-config
+  patch: |-
+    - op: replace
+      path: /data/SEUIL_TEMPERATURE_C
+      value: 5
+    - op: replace
+      path: /data/NIVEAU_JOURNAL
+      value: info
+    - op: replace
+      path: /data/index.html
+      value: |
+        <!doctype html>
+        <html lang="fr">
+          <head><meta charset="utf-8"><title>FoodTrack - suivi qualite</title></head>
+          <body>
+            <h1>FoodTrack - suivi qualite</h1>
+            <p>Tracabilite de la chaine du froid. API des releves de temperature sous /api/.</p>
+            <p>Environnement : test.</p>
+          </body>
+        </html>
+
+- target:
+    kind: Deployment
+    name: portail-qualite
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 2
+
+- target:
+    kind: Deployment
+    name: api-capteurs
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 2
+
+- target:
+    kind: StatefulSet
+    name: cache-releves
+  patch: |-
+    - op: replace 
+      path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+      value: 30Gi
+
+- path: HPA-foodtrack-patch.yaml
