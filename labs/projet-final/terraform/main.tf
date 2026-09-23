@@ -32,6 +32,8 @@ module "compute" {
   master_cidr           = var.master_cidr
   node_count            = var.node_count
   machine_type          = var.machine_type
+  node_disk_size_gb     = var.node_disk_size_gb
+  bastion_machine_type  = var.bastion_machine_type
   service_account_email = var.service_account_email
   environment           = var.environment
 }

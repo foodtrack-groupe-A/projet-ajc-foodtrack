@@ -46,6 +46,16 @@ variable "machine_type" {
   default     = "e2-medium"
 }
 
+variable "node_disk_size_gb" {
+  type        = number
+  description = "Taille du disque pour chaque nœud du cluster GKE en Go"
+}
+
+variable "bastion_machine_type" {
+  type        = string
+  description = "Type de machine de l'instance Bastion"
+}
+
 variable "service_account_email" {
   type        = string
   description = "Email du Service Account attaché aux nœuds"
