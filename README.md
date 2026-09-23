@@ -1,6 +1,22 @@
 # projet-ajc-foodtrack
 
+<<<<<<< Updated upstream
 Dépôt du projet final de la formation AJC Ingénieur Cloud OPS
+=======
+# Dimensionnement GKE
+
+Le Bastion SSH (e2-micro)
+Ce choix repose sur le principe du moindre privilège et de l'optimisation des coûts. L'instance e2-micro offre 2 vCPU partagés et 1 Go de RAM, ce qui est largement suffisant pour jouer son rôle de pont sécurisé vers le réseau privé de GCP. Comme elle ne traite aucune charge applicative et ne sert qu'à relayer tes commandes kubectl ou tes accès SSH, surdimensionner cette machine serait un gaspillage budgétaire, d'autant qu'elle rentre dans le cadre des ressources à très faible coût de GCP.
+
+Le nombre de nœuds GKE (node_count = 2)
+Le choix d'un cluster à deux nœuds permet de garantir la haute disponibilité minimale requise par Kubernetes tout en limitant les frais d'infrastructure. Déployer un seul nœud créerait un point unique de défaillance (Single Point of Failure), rendant le système vulnérable à la moindre maintenance ou panne d'instance. Avec deux worker nodes, Kubernetes peut répartir intelligemment les Pods applicatifs, assurer la résilience de vos microservices et valider le comportement du cluster en conditions réelles sans multiplier la facture par trois ou quatre.
+
+Le type de machine des nœuds (machine_type = "e2-standard-2")
+En attribuant 2 vCPU et 8 Go de RAM par nœud, le cluster dispose d'un total cumulé de 4 vCPU et 16 Go de mémoire vive. Ce dimensionnement est idéal car les composants internes de Kubernetes (comme le CNI, le CSI ou le metrics-server) consomment déjà entre 1 et 1,5 Go de RAM par nœud. Des machines plus petites comme des e2-micro ou e2-small provoqueraient rapidement des pannes par manque de mémoire (Out Of Memory), tandis que cette configuration offre la marge nécessaire pour faire tourner l'ensemble des conteneurs applicatifs de manière stable.
+
+La taille des disques système (node_disk_size_gb = 50)
+Chaque nœud embarque un disque persistant de 50 Go, ce qui représente le parfait compromis pour un environnement de développement et de test. L'système d'exploitation des nœuds (Container-Optimized OS) étant très léger, il occupe moins de 5 Go d'espace. Les 45 Go restants sont alloués au stockage des images Docker en cache et aux volumes temporaires des Pods. Réduire la taille par défaut de GCP (qui est de 100 Go) à 50 Go permet de diviser immédiatement par deux la facture liée au stockage bloc sans impacter les performances de vos déploiements.
+>>>>>>> Stashed changes
 
 # Kustomize
 
@@ -8,6 +24,7 @@ Nous avons choisi de partir sur Kustomize pour la séparation par environnement 
 
 Créer une copie de fichier par environnement pose un véritable problème d'optimisation, tandis qu'envsubst ne propose pas les avantages de confort de Kustomize.
 Nous avons également consideré Helm pour réaliser ce projet, mais après de plus amples recherches et discussions au sein du groupe, nous en avons conclu qu'il était trop fourni pour un projet de cette taille.
+<<<<<<< Updated upstream
 
 ## Changements effectués par environnement dans Kustomize :
 
@@ -26,3 +43,5 @@ Nous avons également consideré Helm pour réaliser ce projet, mais après de p
 |                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
 |                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
 |                                   |                                 |                                         |                                                                      |                                              |                                            |                                            |                                                                                                                                                                                                                                                                                                                                               |
+=======
+>>>>>>> Stashed changes
