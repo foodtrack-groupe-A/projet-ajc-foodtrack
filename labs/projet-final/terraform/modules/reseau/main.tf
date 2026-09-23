@@ -65,3 +65,14 @@ resource "google_compute_firewall" "allow_ssh_bastion" {
     ports    = ["22"]
   }
 }
+
+resource "google_compute_firewall" "allow_ping_test" {
+  name    = "foodtrack-${var.equipe}-allow-ping-test"
+  network = google_compute_network.vpc.name
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}

@@ -17,10 +17,10 @@ master_cidr     = "172.16.0.0/28"
 ssh_source_cidr = "35.235.240.0/20"
 
 # --- Paramètres Compute / GKE ---
-node_count           = 2
+node_count           = 3
 node_disk_size_gb    = 50
 machine_type         = "e2-standard-2"
-bastion_machine_type = "e2-micro"
+bastion_machine_type = "e2-small"
 
 # --- Configuration GitHub / CI-CD ---
 github_owner = "diogeek"

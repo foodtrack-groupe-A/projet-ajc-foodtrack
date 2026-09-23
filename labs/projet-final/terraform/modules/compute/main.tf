@@ -60,6 +60,8 @@ resource "google_compute_instance" "bastion" {
   machine_type = var.bastion_machine_type
   zone         = var.zone
 
+  allow_stopping_for_update = true
+
   tags = ["bastion", "foodtrack-${var.equipe}-bastion"]
 
   boot_disk {
