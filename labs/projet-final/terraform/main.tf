@@ -5,6 +5,8 @@ module "reseau" {
   equipe          = var.equipe
   region          = var.region
   subnet_cidr     = var.subnet_cidr
+  pods_cidr       = var.pods_cidr
+  services_cidr   = var.services_cidr
   ssh_source_cidr = var.ssh_source_cidr
 }
 
@@ -36,4 +38,6 @@ module "compute" {
   bastion_machine_type  = var.bastion_machine_type
   service_account_email = var.service_account_email
   environment           = var.environment
+
+  depends_on = [module.reseau]
 }

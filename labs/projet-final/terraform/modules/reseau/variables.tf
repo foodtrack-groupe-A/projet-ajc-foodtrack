@@ -22,3 +22,13 @@ variable "ssh_source_cidr" {
   description = "Adresse IPv4 publique autorisee pour la connexion du bastion en SSH"
   type        = string
 }
+
+variable "pods_cidr" {
+  description = "Plage CIDR secondaire utilisée par les pods GKE"
+  type        = string
+}
+
+variable "services_cidr" {
+  description = "Plage CIDR secondaire utilisée par les services GKE"
+  type        = string
+}
