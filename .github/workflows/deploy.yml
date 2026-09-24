@@ -11,19 +11,27 @@ on:
 
 jobs:
   lint:
+    name: Lint des manifestes et du Terraform
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.16.4
 
-      - name: Terraform fmt & validate
+      - name: Validation des fichiers Terraform
         run: |
           cd labs/projet-final/terraform
           terraform fmt -check -recursive
           terraform init -backend=false
           terraform validate
+
+      - name: Conformité des manifestes k8s avec Kubeconform
+        uses: docker://ghcr.io/yannh/kubeconform:latest
+        with:
+          args: -summary -output json k8s/base/*.yaml k8s/overlays/*/*.yaml
 
   trivy-config:
     name: Scan Trivy des configurations
