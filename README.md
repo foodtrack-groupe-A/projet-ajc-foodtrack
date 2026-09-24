@@ -118,7 +118,11 @@ spec:
 
 On justifie ces patches par les besoins plus grands dans un environnement de production que dans un environnement de développement ou de testing en quantité de répliques, car la disponibilité de l'application est une priorité ; Du côté de l'utilisation CPU, on peut supporter une utilisation plus élevée en environnement de développement ou de test pour tester l'application mais on préfère la réduire en production pour éviter des crashes. 
 
+## Justification de la politique de sécurité Trivy 
 
+La pipeline bloque la publication et le déploiement loursque l'on a une mauvaise configuration ou une vulnérabilité de type HIGH ou CRITICAL. Nous avons paramétré Trivy de cette façon, car ces deux vulnérabilité ont assez d'importance pour empêcher la mise en production de l'artéfact. D'un autre côté, les niveaux MEDIUM et LOW ne bloquent pas la pipeline, ces deux niveaux pouvant être possiblement du bruit, on limite donc cette possibilité.
+
+En ce qui concerne les images, nous avons choisi le même type de sévérité, pour les mêmes raisons que la configuration. Cependant, un paramètre bloque le pipeline, si les vulnérabilités possèdent un correctif. Dans ce cas là, la pipeline impose la mise à jour avec ce correctif, ou alors le remplacement de cette image. 
 
 ## Justification des choix d'implémentation du script de contrôle de santé :
 
