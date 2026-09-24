@@ -16,7 +16,7 @@ En attribuant 2 vCPU et 8 Go de RAM par nœud, le cluster dispose d'un total cum
 La taille des disques système (node_disk_size_gb = 50)
 Chaque nœud embarque un disque persistant de 50 Go, ce qui représente le parfait compromis pour un environnement de développement et de test. L'système d'exploitation des nœuds (Container-Optimized OS) étant très léger, il occupe moins de 5 Go d'espace. Les 45 Go restants sont alloués au stockage des images Docker en cache et aux volumes temporaires des Pods. Réduire la taille par défaut de GCP (qui est de 100 Go) à 50 Go permet de diviser immédiatement par deux la facture liée au stockage bloc sans impacter les performances de vos déploiements.
 
-## Kustomize
+## Justification de la configuration par environnement avec Kustomize
 
 Nous avons choisi de partir sur Kustomize pour la séparation par environnement pour sa facilité d'exécution et ses capacités adaptées à notre projet de petite envergure. De plus, Kustomize est présent directement dans Cloud Shell.
 
