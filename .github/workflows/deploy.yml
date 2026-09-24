@@ -39,12 +39,6 @@ env:
   IMAGE_NAME: portail-qualite
 
 jobs:
-
-  qualite:
-    name: Lint et scan
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v5
   lint:
     name: Lint des manifestes et du Terraform
     runs-on: ubuntu-latest
@@ -80,6 +74,7 @@ jobs:
   trivy-config:
     name: Scan Trivy des configurations
     runs-on: ubuntu-latest
+    needs: lint
     permissions:
       contents: read
     steps:
@@ -98,7 +93,7 @@ jobs:
   trivy-images_tierces:
     name: Scan de l'image ${{ matrix.image }}
     runs-on: ubuntu-latest
-    needs: trivy-config
+    needs: lint
     permissions:
       contents: read
     strategy:
@@ -187,9 +182,9 @@ jobs:
 
   build:
     name: Build et publication de l image
-    needs: qualite
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    needs: [trivy-config, trivy-images_tierces]
     steps:
     - uses: actions/checkout@v5
 
