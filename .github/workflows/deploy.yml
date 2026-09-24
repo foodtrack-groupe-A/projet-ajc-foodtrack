@@ -20,3 +20,21 @@ jobs:
           terraform fmt -check -recursive
           terraform init -backend=false
           terraform validate
+
+  trivy-config:
+    name: Scan Trivy des configurations
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v4
+      - name: Scan Terraform et Kubernetes
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: config
+          scan-ref: labs/projet-final
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+          hide-progress: true
