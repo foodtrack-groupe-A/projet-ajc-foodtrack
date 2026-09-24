@@ -27,7 +27,7 @@ resource "google_storage_bucket" "logs" {
 resource "google_artifact_registry_repository" "docker" {
   project       = var.project_id
   location      = var.region
-  repository_id = "foodtrack-${var.equipe}-docker"
+  repository_id = "foodtrack-${var.equipe}-images"
   description   = "Images Docker de l'application FoodTrack"
   format        = "DOCKER"
 
