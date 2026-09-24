@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BUCKET_NAME="gs://form-gke-eleve01-4621-tfstate" # Remplace par ton bucket si les logs y sont exportés
+BUCKET_NAME="gs://foodtrack-a-logs-form-gke-eleve01-4621" # Remplace par ton bucket si les logs y sont exportés
 RETENTION_DAYS=30
 
 echo "=== Purge des fichiers de logs anciens dans Google Cloud Storage (> ${RETENTION_DAYS} jours) ==="

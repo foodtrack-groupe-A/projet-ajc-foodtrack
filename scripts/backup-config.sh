@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Configuration
-BUCKET_NAME="gs://form-gke-eleve01-4621-tfstate" # Remplace par le nom exact de ton bucket de sauvegarde
+BUCKET_NAME="gs://foodtrack-a-backups-form-gke-eleve01-4621" # Remplace par le nom exact de ton bucket de sauvegarde
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/tmp/foodtrack_backup_${DATE}"
 ARCHIVE_NAME="backup_foodtrack_${DATE}.tar.gz"
