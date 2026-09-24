@@ -13,7 +13,7 @@ jobs:
 
       - name: Terraform fmt & validate
         run: |
-          cd terraform
+          cd labs/projet-final/terraform
           terraform fmt -check -recursive
           terraform init -backend=false
           terraform validate
