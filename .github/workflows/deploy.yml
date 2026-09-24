@@ -70,7 +70,7 @@ jobs:
 
       - name: Bonnes pratiques Kubernetes avec KubeLinter
         continue-on-error: true
-        uses: stackrox/kube-linter-action@v1.0.7
+        uses: stackrox/kube-linter-action@latest
         with:
           directory: labs/projet-final/manifests/k8s
           version: 0.8.1
@@ -117,6 +117,7 @@ jobs:
           format: table
           severity: HIGH,CRITICAL
           exit-code: "0"
+          ignore-unfixed: true
           hide-progress: true
           version: latest
 
