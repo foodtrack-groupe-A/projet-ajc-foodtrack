@@ -6,16 +6,18 @@ metadata:
 spec:
   ingressClassName: gce
   rules:
-  - host: foodtrack
-    http:
+  # host: foodtrack pas de hostname valide pour l'instant
+  - http:
       paths:
-      - path: /qualite/
-        pathType: Prefix
+      # Routage par défaut
+      - path: /*
+        pathType: ImplementationSpecific
         backend:
           service:
             name: portail-qualite
             port:
               number: 8080
+      # Routage pour l'api
       - path: /capteurs/
         pathType: Prefix
         backend:
