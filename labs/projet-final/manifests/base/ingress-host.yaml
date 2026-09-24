@@ -19,7 +19,7 @@ spec:
             port:
               number: 8080
       # Routage pour l'api
-      - path: /capteurs/*
+      - path: /capteurs
         pathType: Prefix
         backend:
           service:
