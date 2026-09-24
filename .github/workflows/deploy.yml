@@ -224,9 +224,8 @@ jobs:
 
     - name: Application des manifests Kustomize (dev)
       run: |
-        cd manifests/overlays/dev
-        kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        kubectl apply -k .
+        kustomize edit set image --namespace=foodtrack-dev ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} manifests/overlays/dev
+        kubectl apply -k manifests/overlays/dev
 
     - name: Attendre la fin du déploiement
       run: |
