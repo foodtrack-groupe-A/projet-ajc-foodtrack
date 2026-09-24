@@ -3,8 +3,9 @@ kind: Ingress
 metadata:
   name: ingress-foodtrack
   namespace: foodtrack
+  annotations:
+    kubernetes.io/ingress.class: "gce"
 spec:
-  ingressClassName: gce
   rules:
   # host: foodtrack pas de hostname valide pour l'instant
   - http:
@@ -18,7 +19,7 @@ spec:
             port:
               number: 8080
       # Routage pour l'api
-      - path: /capteurs/
+      - path: /capteurs/*
         pathType: Prefix
         backend:
           service:
