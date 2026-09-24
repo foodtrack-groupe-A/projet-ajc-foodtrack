@@ -60,13 +60,13 @@ jobs:
     - name: Conformité des manifestes k8s avec Kubeconform
       uses: docker://ghcr.io/yannh/kubeconform:latest
       with:
-        args: -summary -output json k8s/base/*.yaml k8s/overlays/*/*.yaml
+        args: -summary -output json manifests/base/*.yaml manifests/overlays/*/*.yaml
 
     - name: Bonnes pratiques Kubernetes avec KubeLinter
       continue-on-error: true
       uses: stackrox/kube-linter-action@v1.0.7
       with:
-        directory: labs/projet-final/manifests/k8s
+        directory: labs/projet-final/manifests
         version: latest
         format: plain
         fail-on-invalid-resource: true
@@ -261,7 +261,7 @@ jobs:
         gcloud container clusters get-credentials foodtrack-a-cluster --zone europe-west8-b
         kubectl config use-context gke_${{ vars.GCP_PROJECT_ID}}_${{ vars.GCP_ZONE }}_${{ vars.GKE_CLUSTER }}
         kubectl config set contexts.gke_${{ vars.GCP_PROJECT_ID}}_${{ vars.GCP_ZONE }}_${{ vars.GKE_CLUSTER }}.namespace foodtrack-dev
-        kubectl apply -f labs/projet-final/manifests/k8s/overlays/dev
+        kubectl apply -f labs/projet-final/manifests/overlays/dev
 
     # A FAIRE : mettre a jour l image du deploiement api-capteur
 
