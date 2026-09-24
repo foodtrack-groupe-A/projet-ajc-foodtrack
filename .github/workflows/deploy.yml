@@ -251,10 +251,7 @@ jobs:
 
     - name: Suppression des secrets
       run: |
-        pwd
-        ls
         cd manifests/overlays/dev
-        ls
         rm secret.env
 
   deploy-test:
@@ -279,7 +276,7 @@ jobs:
 
     - name: Créer le secret pour kustomize
       run: |
-        cat > manifests/overlays/dev/secret.env <<'EOF'
+        cat > manifests/overlays/test/secret.env <<'EOF'
           CACHE_PASSWORD=${{ secrets.CACHE_PASSWORD }}
           INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
           EOF
@@ -322,7 +319,7 @@ jobs:
 
     - name: Créer le secret pour kustomize
       run: |
-        cat > manifests/overlays/dev/secret.env <<'EOF'
+        cat > manifests/overlays/prod/secret.env <<'EOF'
           CACHE_PASSWORD=${{ secrets.CACHE_PASSWORD }}
           INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
           EOF
