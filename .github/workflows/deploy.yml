@@ -297,13 +297,100 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # A FAIRE : meme structure que deploy-dev, sur le namespace de test
-      - name: A completer
-        run: echo "a remplacer par vos etapes"
+      - name: Attendre la fin du déploiement de l'API
+        run: |
+          kubectl rollout status \
+            "deployment/api-capteurs" \
+            --namespace="foodtrack-test" \
+            --timeout=180s
+
+      - name: Vérifier que l'API répond
+        run: |
+          SERVICE_PORT=$(kubectl get service "api-capteurs" \
+            --namespace="foodtrack-test" \
+            --output=jsonpath='{.spec.ports[0].port}')
+
+          kubectl port-forward \
+            "service/api-capteurs" \
+            "8080:$SERVICE_PORT" \
+            --namespace="foodtrack-test" \
+            > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
+
+          PORT_FORWARD_PID=$!
+
+          trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+
+          for TENTATIVE in {1..12}; do
+            if curl \
+              --fail \
+              --silent \
+              --show-error \
+              --max-time 5 \
+              "http://127.0.0.1:8080/"; then
+              echo
+              echo "L'API répond correctement."
+              exit 0
+            fi
+
+            echo "Tentative $TENTATIVE/12 : API indisponible."
+            sleep 5
+          done
+
+          echo "L'API ne répond pas après 60 secondes."
+          cat "$RUNNER_TEMP/api-port-forward.log"
+          kubectl get pods --namespace="foodtrack-test"
+          exit 1
 
   deploy-prod:
     name: Deploiement production
     needs: deploy-test
     runs-on: ubuntu-latest
+    steps:
+      - name: Attendre la fin du déploiement de l'API
+        run: |
+          kubectl rollout status \
+            "deployment/api-capteurs" \
+            --namespace="foodtrack-prod" \
+            --timeout=180s
+
+      - name: Vérifier que l'API répond
+        run: |
+          SERVICE_PORT=$(kubectl get service "api-capteurs" \
+            --namespace="foodtrack-prod" \
+            --output=jsonpath='{.spec.ports[0].port}')
+
+          kubectl port-forward \
+            "service/api-capteurs" \
+            "8080:$SERVICE_PORT" \
+            --namespace="foodtrack-prod" \
+            > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
+
+          PORT_FORWARD_PID=$!
+
+          trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+
+          for TENTATIVE in {1..12}; do
+            if curl \
+              --fail \
+              --silent \
+              --show-error \
+              --max-time 5 \
+              "http://127.0.0.1:8080/"; then
+              echo
+              echo "L'API répond correctement."
+              exit 0
+            fi
+
+            echo "Tentative $TENTATIVE/12 : API indisponible."
+            sleep 5
+          done
+
+          echo "L'API ne répond pas après 60 secondes."
+          cat "$RUNNER_TEMP/api-port-forward.log"
+          kubectl get pods --namespace="foodtrack-prod"
+          exit 1
+
+      
     # A FAIRE : cet environnement doit exiger une approbation humaine.
     #        Elle se configure cote depot : Settings > Environments > required
     #        reviewers. Le job attend alors qu un relecteur valide.
@@ -311,7 +398,6 @@ jobs:
     #        il filtre, il ne demande rien a personne.
     # environment:
     #   name: production
-    steps:
       # A FAIRE : deploiement en production, puis verification
       # A FAIRE : decider et documenter ce qui declenche la production :
       #        un merge sur main, une etiquette de version, ou les deux
