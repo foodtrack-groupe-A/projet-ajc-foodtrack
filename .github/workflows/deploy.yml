@@ -245,16 +245,51 @@ jobs:
 
       # A FAIRE : appliquer les manifestes de l environnement dev
 
-      # A FAIRE : mettre a jour l image du deploiement api-capteurs
+      # A FAIRE : mettre a jour l image du deploiement api-capteur
 
-      # A FAIRE : attendre la fin du deploiement AVANT de declarer le job en succes
-      #        piste : kubectl rollout status, avec un --timeout explicite.
-      #        Sans cette attente, votre pipeline est vert pendant que les pods
-      #        bouclent en CrashLoopBackOff.
+      - name: Attendre la fin du déploiement de l'API
+        run: |
+          kubectl rollout status \
+            "deployment/api-capteurs" \
+            --namespace="foodtrack-dev" \
+            --timeout=180s
 
-      # A FAIRE : verifier que l application repond apres deploiement
-      - name: A completer
-        run: echo "a remplacer par vos etapes"
+      - name: Vérifier que l'API répond
+        run: |
+          SERVICE_PORT=$(kubectl get service "api-capteurs" \
+            --namespace="foodtrack-dev" \
+            --output=jsonpath='{.spec.ports[0].port}')
+
+          kubectl port-forward \
+            "service/api-capteurs" \
+            "8080:$SERVICE_PORT" \
+            --namespace="foodtrack-dev" \
+            > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
+
+          PORT_FORWARD_PID=$!
+
+          trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+
+          for TENTATIVE in {1..12}; do
+            if curl \
+              --fail \
+              --silent \
+              --show-error \
+              --max-time 5 \
+              "http://127.0.0.1:8080/"; then
+              echo
+              echo "L'API répond correctement."
+              exit 0
+            fi
+
+            echo "Tentative $TENTATIVE/12 : API indisponible."
+            sleep 5
+          done
+
+          echo "L'API ne répond pas après 60 secondes."
+          cat "$RUNNER_TEMP/api-port-forward.log"
+          kubectl get pods --namespace="foodtrack-dev"
+          exit 1
 
   deploy-test:
     name: Deploiement test
