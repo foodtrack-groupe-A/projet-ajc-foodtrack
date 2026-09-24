@@ -28,7 +28,7 @@ jobs:
 
     - name: Validation des fichiers Terraform
       run: |
-        cd labs/projet-final/terraform
+        cd terraform
         terraform fmt -check -recursive
         terraform init -backend=false
         terraform validate
@@ -36,7 +36,7 @@ jobs:
     - name: Conformité des manifestes k8s avec Kubeconform
       uses: docker://ghcr.io/yannh/kubeconform:latest
       with:
-        args: -summary -ignore-filename-pattern kustomization.yaml -output json labs/projet-final/manifests/base
+        args: -summary -ignore-filename-pattern kustomization.yaml -output json manifests/base
 
   trivy-config:
     name: Scan Trivy des configurations
@@ -51,7 +51,7 @@ jobs:
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
       with:
         scan-type: config
-        scan-ref: labs/projet-final
+        scan-ref: .
         format: table
         severity: HIGH,CRITICAL
         exit-code: "0"
@@ -91,7 +91,7 @@ jobs:
     - uses: actions/checkout@v5
 
     - name: Prévisualisation des changements Terraform
-      working-directory: labs/projet-final/terraform
+      working-directory: terraform
       run: |
         TARGET_BRANCH="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
 
@@ -177,8 +177,8 @@ jobs:
     - name: Construire et publier l'image
       uses: docker/build-push-action@v7
       with:
-        context: labs/projet-final
-        file: labs/projet-final/Dockerfile
+        context: .
+        file: Dockerfile
         push: true
         tags: |
           ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
@@ -224,7 +224,7 @@ jobs:
 
     - name: Application des manifests Kustomize (dev)
       run: |
-        cd labs/projet-final/manifests/overlays/dev
+        cd manifests/overlays/dev
         kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
@@ -272,7 +272,7 @@ jobs:
 
     - name: Application des manifests Kustomize (test)
       run: |
-        cd labs/projet-final/manifests/overlays/test
+        cd manifests/overlays/test
         kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
@@ -303,7 +303,7 @@ jobs:
 
     - name: Application des manifests Kustomize (prod)
       run: |
-        cd labs/projet-final/manifests/overlays/prod
+        cd manifests/overlays/prod
         kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
