@@ -60,7 +60,7 @@ jobs:
     - name: Conformité des manifestes k8s avec Kubeconform
       uses: docker://ghcr.io/yannh/kubeconform:latest
       with:
-        args: -summary -output json labs/projet-final/manifests/base
+        args: -summary -ignore-filename-pattern kustomization.yaml -output json labs/projet-final/manifests/base
 
     - name: Bonnes pratiques Kubernetes avec KubeLinter
       continue-on-error: true
