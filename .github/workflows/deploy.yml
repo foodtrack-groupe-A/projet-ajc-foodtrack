@@ -251,6 +251,10 @@ jobs:
 
     - name: Suppression des secrets
       run: |
+        pwd
+        ls
+        cd manifests/overlays/dev
+        ls
         rm secret.env
 
   deploy-test:
@@ -292,6 +296,7 @@ jobs:
 
     - name: Suppression des secrets
       run: |
+        cd manifests/overlays/test
         rm secret.env
 
   deploy-prod:
@@ -334,4 +339,5 @@ jobs:
 
     - name: Suppression des secrets
       run: |
+        cd manifests/overlays/prod
         rm secret.env
