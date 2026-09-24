@@ -68,6 +68,15 @@ jobs:
         with:
           args: -summary -output json k8s/base/*.yaml k8s/overlays/*/*.yaml
 
+      - name: Bonnes pratiques Kubernetes avec KubeLinter
+        continue-on-error: true
+        uses: stackrox/kube-linter-action@v1.0.7
+        with:
+          directory: labs/projet-final/manifests/k8s
+          version: 0.8.1
+          format: plain
+          fail-on-invalid-resource: true
+
   trivy-config:
     name: Scan Trivy des configurations
     runs-on: ubuntu-latest
