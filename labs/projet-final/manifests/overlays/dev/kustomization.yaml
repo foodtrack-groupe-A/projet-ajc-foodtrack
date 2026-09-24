@@ -11,6 +11,13 @@ secretGenerator:
 
 patches:
 - target:
+    kind: Ingress
+    name: ingress-foodtrack
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: "ingress-foodtrack-dev-ip"
+- target:
     kind: Namespace
     name: foodtrack
   patch: |-
