@@ -181,14 +181,14 @@ jobs:
         file: Dockerfile
         push: true
         tags: |
-          ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+          ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
+          ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:latest
 
     - name: Scan Trivy de l'image construite
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
         scan-type: image
-        image-ref: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        image-ref: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
         format: table
         severity: HIGH,CRITICAL
         exit-code: "0"
@@ -224,7 +224,7 @@ jobs:
     - name: Application des manifests Kustomize (dev)
       run: |
         cd manifests/overlays/dev
-        kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        kustomize edit set image ${{ vars.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
     - name: Attendre la fin du déploiement
@@ -284,7 +284,7 @@ jobs:
     - name: Application des manifests Kustomize (test)
       run: |
         cd manifests/overlays/test
-        kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        kustomize edit set image ${{ vars.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
     - name: Attendre la fin du déploiement
@@ -327,7 +327,7 @@ jobs:
     - name: Application des manifests Kustomize (prod)
       run: |
         cd manifests/overlays/prod
-        kustomize edit set image ${{ env.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        kustomize edit set image ${{ vars.IMAGE_NAME }}=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
         kubectl apply -k .
 
     - name: Attendre la fin du déploiement
