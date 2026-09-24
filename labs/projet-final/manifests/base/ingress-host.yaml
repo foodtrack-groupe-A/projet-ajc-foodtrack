@@ -18,11 +18,3 @@ spec:
             name: portail-qualite
             port:
               number: 8080
-      # Routage pour l'api
-      - path: /capteurs
-        pathType: Prefix
-        backend:
-          service:
-            name: api-capteurs
-            port:
-              number: 8080
