@@ -225,7 +225,7 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
-    # A FAIRE : declarer l environnement GitHub correspondant
+    environment: develop #run seulement si c'est dans l'environnement de développement, 'develop'
     steps:
       - uses: actions/checkout@v5
 
@@ -243,7 +243,20 @@ jobs:
           location: ${{ vars.GCP_ZONE }}
       # --- fin du bloc fourni ------------------------------------------------
 
-      # A FAIRE : appliquer les manifestes de l environnement dev
+      - name: Créer le secret pour kustomize
+        run: |
+          kubectl create secret generic api-capteurs-secrets \
+            --namespace=foodtrack-dev \
+            --from-literal=CACHE_PASSWORD="${{ secrets.CACHE_PASSWORD }}" \
+            --from-literal=INGEST_TOKEN="${{ secrets.INGEST_TOKEN }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Application des manifests de l'environnement dev
+        run: |
+          gcloud container clusters get-credentials foodtrack-a-cluster --zone europe-west8-b
+          kubectl config use-context gke_${{ vars.GCP_PROJECT_ID}}_${{ vars.GCP_ZONE }}_${{ vars.GKE_CLUSTER }}
+          kubectl config set contexts.gke_${{ vars.GCP_PROJECT_ID}}_${{ vars.GCP_ZONE }}_${{ vars.GKE_CLUSTER }}.namespace foodtrack-dev
+          kubectl apply -f labs/projet-final/manifests/k8s/overlays/dev
 
       # A FAIRE : mettre a jour l image du deploiement api-capteur
 
