@@ -23,5 +23,5 @@ machine_type         = "e2-standard-2"
 bastion_machine_type = "e2-micro"
 
 # --- Configuration GitHub / CI-CD ---
-github_owner = "diogeek"
+github_owner = "foodtrack-groupe-A"
 github_repo  = "projet-ajc-foodtrack"
