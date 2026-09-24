@@ -249,6 +249,10 @@ jobs:
         done
         exit 1
 
+    - name: Suppression des secrets
+      run: |
+        rm secret.env
+
   deploy-test:
     name: Déploiement test
     needs: deploy-dev
@@ -269,6 +273,13 @@ jobs:
         cluster_name: ${{ vars.GKE_CLUSTER }}
         location: ${{ vars.GCP_ZONE }}
 
+    - name: Créer le secret pour kustomize
+      run: |
+        cat > manifests/overlays/dev/secret.env <<'EOF'
+          CACHE_PASSWORD=${{ secrets.CACHE_PASSWORD }}
+          INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
+          EOF
+
     - name: Application des manifests Kustomize (test)
       run: |
         cd manifests/overlays/test
@@ -278,6 +289,10 @@ jobs:
     - name: Attendre la fin du déploiement
       run: |
         kubectl rollout status deployment/api-capteurs -n foodtrack-test --timeout=180s || true
+
+    - name: Suppression des secrets
+      run: |
+        rm secret.env
 
   deploy-prod:
     name: Déploiement production
@@ -300,6 +315,13 @@ jobs:
         cluster_name: ${{ vars.GKE_CLUSTER }}
         location: ${{ vars.GCP_ZONE }}
 
+    - name: Créer le secret pour kustomize
+      run: |
+        cat > manifests/overlays/dev/secret.env <<'EOF'
+          CACHE_PASSWORD=${{ secrets.CACHE_PASSWORD }}
+          INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
+          EOF
+
     - name: Application des manifests Kustomize (prod)
       run: |
         cd manifests/overlays/prod
@@ -309,3 +331,7 @@ jobs:
     - name: Attendre la fin du déploiement
       run: |
         kubectl rollout status deployment/api-capteurs -n foodtrack-prod --timeout=180s || true
+
+    - name: Suppression des secrets
+      run: |
+        rm secret.env
