@@ -29,6 +29,7 @@ resource "google_compute_subnetwork" "subnet" {
     ip_cidr_range = var.services_cidr
   }
 }
+
 resource "google_compute_router" "router" {
   project = var.project_id
   name    = "foodtrack-${var.equipe}-router"

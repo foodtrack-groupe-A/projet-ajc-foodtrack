@@ -118,6 +118,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "0"
           hide-progress: true
+          version: latest
 
       # A FAIRE : decider du seuil de severite qui fait echouer le job, et le
       #        justifier dans le README. Desactiver le scan n est pas une option.
