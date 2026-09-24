@@ -121,10 +121,69 @@ jobs:
           hide-progress: true
           version: latest
 
-      # A FAIRE : decider du seuil de severite qui fait echouer le job, et le
-      #        justifier dans le README. Desactiver le scan n est pas une option.
-      - name: A completer
-        run: echo "a remplacer par vos etapes"
+      - name: Prévisualisation des changements Terraform
+        working-directory: labs/projet-final/terraform
+        run: |
+          TARGET_BRANCH="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
+
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            ENVIRONMENT="prod"
+            TFVARS_FILE="prod.tfvars"
+          else
+            case "$TARGET_BRANCH" in
+              develop)
+                ENVIRONMENT="dev"
+                TFVARS_FILE="dev.tfvars"
+                ;;
+              test)
+                ENVIRONMENT="test"
+                TFVARS_FILE="test.tfvars"
+                ;;
+              main)
+                ENVIRONMENT="prod"
+                TFVARS_FILE="prod.tfvars"
+                ;;
+              *)
+                echo "Branche non prise en charge : $TARGET_BRANCH"
+                exit 1
+                ;;
+            esac
+          fi
+
+          echo "Environnement sélectionné : $ENVIRONMENT"
+          echo "Fichier utilisé : $TFVARS_FILE"
+          set +e
+
+          terraform plan \
+            -var-file="$TFVARS_FILE" \
+            -input=false \
+            -no-color \
+            -detailed-exitcode | tee plan.txt
+
+          PLAN_CODE=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$PLAN_CODE" -eq 0 ]; then
+            STATUS="Aucun changement"
+          elif [ "$PLAN_CODE" -eq 2 ]; then
+            STATUS="Changements détectés"
+          else
+            STATUS="Erreur pendant le terraform plan"
+          fi
+
+          RESUME=$(grep -E "^(Plan:|No changes\.)" plan.txt | tail -n 1 || true)
+
+          {
+            echo "## Terraform plan — dev"
+            echo
+            echo "$STATUS"
+            echo
+            echo "${RESUME:-Consulter les logs pour plus de détails.}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$PLAN_CODE" -eq 1 ]; then
+            exit 1
+          fi
 
   build:
     name: Build et publication de l image
