@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: ingress-foodtrack
   namespace: foodtrack
+  # utilisation de la façon obsolète car la nouvelle façon provoque un erreur.
   annotations:
     kubernetes.io/ingress.class: "gce"
 spec:
@@ -18,4 +19,3 @@ spec:
             name: portail-qualite
             port:
               number: 8080
-

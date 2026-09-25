@@ -452,6 +452,100 @@ spec:
 
 On justifie ces patches par les besoins plus grands dans un environnement de production que dans un environnement de développement ou de testing en quantité de répliques, car la disponibilité de l'application est une priorité ; Du côté de l'utilisation CPU, on peut supporter une utilisation plus élevée en environnement de développement ou de test pour tester l'application mais on préfère la réduire en production pour éviter des crashes. 
 
+#### Ingress
+
+ingress.yaml
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  namespace: foodtrack
+  # utilisation de la façon déprécié car la nouvelle façon provoque un erreur.
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+  # host: foodtrack pas de hostname valide pour l'instant
+  - http:
+      paths:
+      # Routage par défaut
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: portail-qualite
+            port:
+              number: 8080
+```
+Déploie notre `portail-qualite` ainsi que notre `api-capteurs` respectivment sur `adresse/` et `adresse/api/`.
+L'utilisation de `kubernetes.io/ingress.class: "gce"`, une fonction obsolète a été nécessaire car la fonction recommandé `spec.IngressClass` ne permettait pas d'obtenir une adresse IP pour notre ingress.
+
+Des patch ont été déployer pour les différents environnements pour permettre le déploiement sur la bonne adresse ip.
+
+ - Environnement de dev :
+```yaml
+ - target:
+    kind: Ingress
+    name: ingress-foodtrack
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: "ingress-foodtrack-dev-ip"
+```
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "ingress-foodtrack-dev-ip"
+```
+
+ - Environnement de test : 
+```yaml
+- target:
+    kind: Ingress
+    name: ingress-foodtrack
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: "ingress-foodtrack-test-ip"
+```
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "ingress-foodtrack-test-ip"
+```
+
+ - Environnmeent de prod :
+```yaml
+- target:
+    kind: Ingress
+    name: ingress-foodtrack
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: "ingress-foodtrack-prod-ip"
+```
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "ingress-foodtrack-prod-ip"
+```
+la création d'adresse IP statique a été réalisé via le terminal cloud shell.
+```sh
+gcloud compute addresses create ingress-foodtrack-dev-ip --global
+gcloud compute addresses create ingress-foodtrack-test-ip --global
+gcloud compute addresses create ingress-foodtrack-prod-ip --global
+```
+
 ## Justification de la politique de sécurité Trivy
 
 La pipeline bloque la publication et le déploiement lorsque l'on a une mauvaise configuration ou une vulnérabilité de type CRITICAL. Nous avons paramétré Trivy de cette façon, car la vulnérabilité CRITICAL a assez d'importance pour empêcher la mise en production de l'artéfact. Nous avons considéré un blocage sur une gravité HIGH mais le cahier des charges requérait l'utilisation d'images, parmi lesquelles `us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0`, qui contient 16 vulnérabilités de gravité HIGH. N'ayant aucun pouvoir sur ces images, nous devons accepter ces vulnérabilités et donc adoucir notre politique de sécurité en ne bloquant que sur CRITICAL. D'un autre côté, les niveaux MEDIUM et LOW ne bloquent pas la pipeline, ces deux niveaux pouvant être possiblement du bruit, on limite donc cette possibilité.
