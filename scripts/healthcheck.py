@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, time, urllib.request, urllib.error
+import os, sys, time, urllib.request, urllib.error 
 
 API_URL = os.environ.get("API_URL", "http://localhost:8080/health")
 MAX_LATENCY = float(os.environ.get("MAX_LATENCY_SEC", "2.0"))
