@@ -17,7 +17,7 @@ variable "region" {
 variable "zone" {
   type        = string
   description = "Zone GCP d'hébergement du cluster zonal"
-  default     = "europe-west8-a"
+  default     = "europe-west8-b"
 }
 
 variable "environment" {
