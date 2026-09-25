@@ -16,13 +16,13 @@ variable "github_repo" {
 variable "pool_id" {
   description = "Identifiant du pool d identites. Lettres minuscules, chiffres et tirets, 4 a 32 caracteres"
   type        = string
-  default     = "github-pool"
+  default     = "github-pool-2"
 }
 
 variable "provider_id" {
   description = "Identifiant du fournisseur OIDC dans le pool"
   type        = string
-  default     = "github-provider"
+  default     = "github-provider-2"
 }
 
 variable "ci_service_account_id" {
