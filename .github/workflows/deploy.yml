@@ -184,6 +184,20 @@ jobs:
           ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
           ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:latest
 
+    - name: Exporter l'image construite
+      env:
+        IMAGE_REF: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
+      run: |
+        docker pull "$IMAGE_REF"
+        docker save "$IMAGE_REF" | gzip > "foodtrack-image-${GITHUB_SHA}.tar.gz"
+
+    - name: Conserver l'image pour le job de production
+      uses: actions/upload-artifact@v4
+      with:
+        name: foodtrack-image-${{ github.sha }}
+        path: foodtrack-image-${{ github.sha }}.tar.gz
+        if-no-files-found: error
+
     - name: Scan Trivy de l'image construite
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
@@ -307,6 +321,11 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
+    - name: Récupérer l'image construite
+      uses: actions/download-artifact@v4
+      with:
+        name: foodtrack-image-${{ github.sha }}
+
     - id: auth
       uses: google-github-actions/auth@v3
       with:
@@ -343,17 +362,11 @@ jobs:
 
     - name: Préparer l'artefact de release
       run: |
-        printf 'Version : %s\nCommit : %s\nImage : %s\n' \
-          "$GITHUB_REF_NAME" \
-          "$GITHUB_SHA" \
-          "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}" \
-          > release-metadata.txt
-        tar --exclude='secret.env' -czf "foodtrack-${GITHUB_REF_NAME}.tar.gz" \
-          Dockerfile README.md release-metadata.txt manifests/base manifests/overlays/prod
+        mv "foodtrack-image-${GITHUB_SHA}.tar.gz" "foodtrack-${GITHUB_REF_NAME}-image.tar.gz"
 
     - name: Publier l'artefact dans la release GitHub
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ github.ref_name }}
         generate_release_notes: true
-        files: foodtrack-${{ github.ref_name }}.tar.gz
+        files: foodtrack-${{ github.ref_name }}-image.tar.gz
