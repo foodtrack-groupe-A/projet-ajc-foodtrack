@@ -39,6 +39,7 @@ module "compute" {
   service_account_email = var.service_account_email
   environment           = var.environment
 
+
   depends_on = [module.reseau]
 }
 

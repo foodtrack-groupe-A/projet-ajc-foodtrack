@@ -1,6 +1,340 @@
-# projet-ajc-foodtrack
+# FoodTrack — Infrastructure GCP et pipeline CI/CD
 
 Dépôt du projet final de la formation AJC Ingénieur Cloud OPS
+
+## Présentation
+
+FoodTrack est un projet de formation visant à déployer une application conteneurisée sur Google Cloud en appliquant des pratiques d’Infrastructure as Code (ou IaC), d’orchestration Kubernetes et d’intégration continue.
+
+L’infrastructure est décrite avec Terraform, les ressources applicatives sont déployées sur Google Kubernetes Engine avec Kustomize, et GitHub Actions automatise les contrôles de qualité, les analyses de sécurité et les déploiements.
+
+Le projet utilise le projet Google Cloud suivant :
+
+```text
+form-gke-eleve01-4621
+```
+
+L’infrastructure est déployée dans la région :
+
+```text
+europe-west8
+```
+
+## Objectifs techniques
+
+Le projet met en œuvre les éléments suivants :
+
+* un réseau GCP privé créé avec Terraform ;
+* un cluster GKE utilisant des nœuds sans adresse IP publique ;
+* un bastion accessible avec Identity-Aware Proxy ;
+* un Cloud NAT pour les sorties Internet des ressources privées ;
+* des buckets Cloud Storage pour les sauvegardes et les journaux ;
+* un dépôt Artifact Registry pour les images de conteneurs ;
+* trois environnements applicatifs Kubernetes : développement, test et production ;
+* une authentification GitHub Actions vers Google Cloud sans clé JSON ;
+* un pipeline intégrant validation, analyse de sécurité, construction et déploiement.
+
+## Choix d’architecture
+
+Le projet repose sur un socle Google Cloud partagé comprenant un VPC, un cluster GKE, un bastion, des espaces de stockage et un dépôt d’images.
+
+Les environnements applicatifs ne correspondent pas à trois clusters distincts. Ils sont isolés dans le cluster GKE grâce à trois namespaces Kubernetes :
+
+```text
+foodtrack-dev
+foodtrack-test
+foodtrack-prod
+```
+
+Chaque environnement possède également son overlay Kustomize afin d’adapter les manifestes Kubernetes sans dupliquer l’ensemble de leur contenu.
+
+Les trois fichiers Terraform demandés par le cahier des charges sont conservés :
+
+```text
+dev.tfvars
+test.tfvars
+prod.tfvars
+```
+
+Ils représentent des profils de paramétrage du socle et permettent de rendre visibles les différences prévues entre les environnements. Ils ne constituent cependant pas trois infrastructures indépendantes, car le projet utilise un seul projet GCP, un seul cluster GKE et un state Terraform partagé.
+
+Cette architecture a été retenue afin de respecter les contraintes pédagogiques du projet tout en évitant de multiplier les clusters et les ressources GCP. La séparation entre développement, test et production est donc principalement assurée au niveau Kubernetes.
+
+## Architecture générale
+
+L’infrastructure est organisée sous la forme d’un socle Terraform racine qui assemble quatre modules spécialisés.
+
+```mermaid
+flowchart TD
+    ROOT["Socle Terraform"] --> NET["Module réseau"]
+    ROOT --> STORE["Module stockage"]
+    ROOT --> WIF["Module WIF GitHub"]
+    NET --> COMPUTE["Module compute"]
+    ROOT --> COMPUTE
+    COMPUTE --> GKE["Cluster GKE"]
+    COMPUTE --> BASTION["Bastion privé"]
+```
+
+Le module `compute` dépend du module `reseau`, car la création du cluster et du bastion nécessite les identifiants du VPC, du sous-réseau et des plages secondaires Kubernetes.
+
+Les modules `stockage` et `wif-github` sont indépendants du réseau :
+
+* le premier crée les espaces de stockage et le dépôt d’images ;
+* le second configure l’identité utilisée par GitHub Actions.
+
+### Organisation réseau
+
+Le projet utilise un VPC personnalisé plutôt que le réseau GCP par défaut. La création automatique des sous-réseaux est désactivée afin de conserver la maîtrise du plan d’adressage.
+
+Le sous-réseau possède trois plages d’adresses :
+
+| Usage                  | Plage         |
+| ---------------------- | ------------- |
+| Ressources principales | `10.0.0.0/20` |
+| Pods Kubernetes        | `10.4.0.0/14` |
+| Services Kubernetes    | `10.8.0.0/20` |
+
+Les plages des pods et des services sont déclarées comme plages secondaires du sous-réseau. Elles permettent à GKE de fonctionner en mode VPC natif et évitent de mélanger les adresses des machines avec celles des objets Kubernetes.
+
+Le plan de contrôle du cluster utilise une quatrième plage dédiée :
+
+```text
+172.16.0.0/28
+```
+
+### Accès Internet des ressources privées
+
+Les nœuds GKE et le bastion ne possèdent pas d’adresse IP publique.
+
+Un Cloud Router et un Cloud NAT permettent néanmoins aux ressources privées d’établir des connexions sortantes, par exemple pour télécharger des images de conteneurs ou contacter des services externes.
+
+Le NAT autorise les sorties Internet sans rendre les machines directement accessibles depuis Internet.
+
+### Accès administratif au bastion
+
+Le bastion est accessible avec Identity-Aware Proxy. La règle de pare-feu SSH accepte uniquement la plage utilisée par IAP :
+
+```text
+35.235.240.0/20
+```
+
+L’authentification au système repose sur OS Login. Cette solution évite d’attribuer une adresse IP publique au bastion et centralise le contrôle des accès dans IAM.
+
+### Cluster Kubernetes
+
+Le cluster GKE est zonal et utilise un node pool géré séparément du cluster.
+
+Les nœuds sont privés :
+
+```hcl
+enable_private_nodes = true
+```
+
+Le plan de contrôle conserve cependant un endpoint public :
+
+```hcl
+enable_private_endpoint = false
+```
+
+Le cluster ne doit donc pas être présenté comme entièrement privé. Ce choix simplifie l’administration pendant le projet, tandis que les accès restent soumis à l’authentification et aux autorisations Google Cloud.
+
+Les trois environnements applicatifs sont isolés dans le cluster avec les namespaces suivants :
+
+| Environnement | Namespace        |
+| ------------- | ---------------- |
+| Développement | `foodtrack-dev`  |
+| Test          | `foodtrack-test` |
+| Production    | `foodtrack-prod` |
+
+### State Terraform distant
+
+Le state Terraform est conservé dans un bucket Cloud Storage :
+
+```text
+foodtrack-a-tfstate-form-gke-eleve01-4621
+```
+
+avec le préfixe :
+
+```text
+terraform/state
+```
+
+Ce backend distant permet aux membres du groupe et au pipeline de travailler à partir du même état de référence.
+
+Le bucket du backend doit exister avant l’exécution de `terraform init`. Il ne peut pas être créé par la configuration Terraform qui dépend elle-même de ce state : il constitue donc une ressource d’amorçage créée séparément.
+
+## Organisation des modules Terraform
+
+La configuration Terraform est séparée en quatre modules afin d’isoler les responsabilités et de faciliter la lecture, la maintenance et la réutilisation du code.
+
+```text
+terraform/
+├── main.tf
+├── variables.tf
+├── outputs.tf
+├── backend.tf
+├── providers.tf
+├── versions.tf
+└── modules/
+    ├── reseau/
+    ├── compute/
+    ├── stockage/
+    └── wif-github/
+```
+
+### Socle racine
+
+Le socle racine orchestre les modules. Il ne crée pas directement les principales ressources GCP : il transmet les variables, relie les modules et expose les informations utiles sous forme d’outputs.
+
+La liaison entre le réseau et le compute est réalisée avec les outputs du module `reseau` :
+
+```hcl
+network_id          = module.reseau.network_id
+subnetwork_id       = module.reseau.subnetwork_id
+pods_range_name     = module.reseau.pods_range_name
+services_range_name = module.reseau.services_range_name
+```
+
+Cette liaison évite de recopier manuellement les identifiants des ressources. Terraform connaît également la dépendance entre les modules et construit le réseau avant le cluster.
+
+### Module `reseau`
+
+Le module `reseau` crée les composants nécessaires aux communications du projet :
+
+* un VPC personnalisé ;
+* un sous-réseau régional ;
+* une plage principale pour les machines ;
+* une plage secondaire pour les pods ;
+* une plage secondaire pour les services Kubernetes ;
+* un Cloud Router ;
+* un Cloud NAT ;
+* une règle de pare-feu SSH dédiée au bastion.
+
+La propriété suivante active l’accès privé aux API Google depuis le sous-réseau :
+
+```hcl
+private_ip_google_access = true
+```
+
+Le module expose ensuite les identifiants du réseau et les noms des plages secondaires. Ces informations sont consommées par le module `compute`.
+
+### Module `compute`
+
+Le module `compute` crée :
+
+* le cluster GKE zonal ;
+* le node pool ;
+* le bastion d’administration.
+
+Le node pool créé automatiquement par GKE est supprimé :
+
+```hcl
+remove_default_node_pool = true
+```
+
+Un node pool distinct est ensuite déclaré avec Terraform. Cette séparation permet de contrôler explicitement :
+
+* le nombre de nœuds ;
+* le type de machine ;
+* le type et la taille des disques ;
+* le compte de service ;
+* les labels et les tags réseau.
+
+Le cluster utilise les plages secondaires fournies par le module réseau :
+
+```hcl
+ip_allocation_policy {
+  cluster_secondary_range_name  = var.pods_range_name
+  services_secondary_range_name = var.services_range_name
+}
+```
+
+Le bastion utilise le même VPC et le même sous-réseau que le cluster. Il ne possède pas de bloc `access_config`, et donc aucune adresse IP publique.
+
+L’option suivante autorise Terraform à arrêter la VM lorsqu’une modification l’exige, par exemple lors d’un changement de type de machine :
+
+```hcl
+allow_stopping_for_update = true
+```
+
+### Module `stockage`
+
+Le module `stockage` crée deux buckets Cloud Storage.
+
+Le bucket de sauvegardes conserve les données destinées à la restauration :
+
+```text
+foodtrack-a-backups-form-gke-eleve01-4621
+```
+
+Le bucket de logs stocke les exports de journaux :
+
+```text
+foodtrack-a-logs-form-gke-eleve01-4621
+```
+
+Une règle de cycle de vie supprime automatiquement les objets du bucket de logs après 30 jours. Elle permet de limiter l’accumulation de données et les coûts de stockage.
+
+Les deux buckets utilisent l’accès uniforme :
+
+```hcl
+uniform_bucket_level_access = true
+```
+
+Les droits sont ainsi gérés avec IAM au niveau du bucket, sans utiliser d’ACL individuelles sur les objets.
+
+La propriété suivante empêche Terraform de supprimer automatiquement un bucket qui contient encore des objets :
+
+```hcl
+force_destroy = false
+```
+
+Le module crée également le dépôt Docker Artifact Registry :
+
+```text
+foodtrack-a-images
+```
+
+Ce dépôt reçoit les images produites ou publiées par le pipeline GitHub Actions.
+
+### Module `wif-github`
+
+Le module `wif-github` a été fourni avec le projet puis intégré au socle Terraform. Il permet à GitHub Actions de s’authentifier auprès de Google Cloud sans stocker de clé JSON.
+
+Il crée quatre éléments principaux :
+
+1. un pool d’identités externes ;
+2. un fournisseur OIDC faisant confiance aux jetons signés par GitHub ;
+3. un compte de service utilisé par le pipeline ;
+4. une liaison IAM autorisant le dépôt GitHub à emprunter ce compte.
+
+La condition suivante limite la fédération au dépôt attendu :
+
+```hcl
+attribute_condition = "assertion.repository == \"${var.github_owner}/${var.github_repo}\""
+```
+
+Une exécution provenant d’un autre dépôt ne peut donc pas utiliser cette identité.
+
+Le compte de service du pipeline reçoit initialement deux rôles :
+
+| Rôle                            | Utilisation                                   |
+| ------------------------------- | --------------------------------------------- |
+| `roles/artifactregistry.writer` | Publication des images dans Artifact Registry |
+| `roles/container.developer`     | Accès aux ressources Kubernetes du cluster    |
+
+Le module permet d’ajouter des rôles avec `roles_supplementaires`, mais chaque droit supplémentaire doit être justifié selon le principe du moindre privilège.
+
+Après l’application du module, deux outputs sont nécessaires à GitHub Actions :
+
+```text
+wif_provider_name
+ci_service_account_email
+```
+
+Ils sont enregistrés dans les variables GitHub `WIF_PROVIDER` et `CI_SERVICE_ACCOUNT`. Ces valeurs identifient des ressources mais ne contiennent aucun secret.
+
 
 ## Dimensionnement GKE
 
