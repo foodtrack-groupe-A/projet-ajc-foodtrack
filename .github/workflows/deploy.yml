@@ -2,10 +2,10 @@ name: CI/CD FoodTrack
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [ develop, test, prod ] # Dans le contexte du projet, uniquement un push sur la branche develop sera fait.
     tags: [ "v*" ]
   pull_request:
-    branches: [ develop, main ]
+    branches: [ develop, test, prod ]
 
 permissions:
   contents: read
@@ -78,7 +78,7 @@ jobs:
         image-ref: ${{ matrix.image }}
         format: table
         severity: CRITICAL
-        exit-code: "0"
+        exit-code: "1"
         ignore-unfixed: true
         hide-progress: true
         version: latest
@@ -196,7 +196,6 @@ jobs:
   deploy-dev:
     name: Déploiement dev
     needs: build
-    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     environment: develop
     steps:
@@ -231,23 +230,6 @@ jobs:
       run: |
         kubectl rollout status deployment/api-capteurs -n foodtrack-dev --timeout=180s || true
         kubectl rollout status deployment/portail-qualite -n foodtrack-dev --timeout=180s || true
-
-    - name: Exécuter le Healthcheck (Lead Exploitation)
-      run: |
-        SERVICE_PORT=$(kubectl get service "api-capteurs" --namespace="foodtrack-dev" --output=jsonpath='{.spec.ports[0].port}')
-        kubectl port-forward "service/api-capteurs" "8080:$SERVICE_PORT" --namespace="foodtrack-dev" > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
-        PORT_FORWARD_PID=$!
-        
-        trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
-
-        sleep 3
-
-        export API_URL="http://127.0.0.1:8080/health"
-        export MAX_LATENCY_SEC="2.0"
-        export MAX_TRIES="10"
-        export TRIES_INTERVAL="5"
-
-        python3 scripts/healthcheck.py
 
     - name: Suppression des secrets
       run: |
@@ -291,6 +273,23 @@ jobs:
       run: |
         kubectl rollout status deployment/api-capteurs -n foodtrack-test --timeout=180s || true
 
+    - name: Exécuter le Healthcheck (Lead Exploitation)
+      run: |
+        SERVICE_PORT=$(kubectl get service "api-capteurs" --namespace="foodtrack-test" --output=jsonpath='{.spec.ports[0].port}')
+        kubectl port-forward "service/api-capteurs" "8080:$SERVICE_PORT" --namespace="foodtrack-test" > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
+        PORT_FORWARD_PID=$!
+
+        trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
+
+        sleep 3
+
+        export API_URL="http://127.0.0.1:8080/health"
+        export MAX_LATENCY_SEC="2.0"
+        export MAX_TRIES="10"
+        export TRIES_INTERVAL="5"
+
+        python3 scripts/healthcheck.py
+
     - name: Suppression des secrets
       run: |
         cd manifests/overlays/test
@@ -299,9 +298,12 @@ jobs:
   deploy-prod:
     name: Déploiement production
     needs: deploy-test
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') # ne déploie en environnement de prod que si le push a un tag de version
     runs-on: ubuntu-latest
     environment: production # Exige la validation humaine dans GitHub Actions
+    permissions:
+      contents: write
+      id-token: write
     steps:
     - uses: actions/checkout@v5
 
@@ -338,3 +340,20 @@ jobs:
       run: |
         cd manifests/overlays/prod
         rm secret.env
+
+    - name: Préparer l'artefact de release
+      run: |
+        printf 'Version : %s\nCommit : %s\nImage : %s\n' \
+          "$GITHUB_REF_NAME" \
+          "$GITHUB_SHA" \
+          "${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}" \
+          > release-metadata.txt
+        tar --exclude='secret.env' -czf "foodtrack-${GITHUB_REF_NAME}.tar.gz" \
+          Dockerfile README.md release-metadata.txt manifests/base manifests/overlays/prod
+
+    - name: Publier l'artefact dans la release GitHub
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        generate_release_notes: true
+        files: foodtrack-${{ github.ref_name }}.tar.gz
