@@ -6,7 +6,7 @@
 project_id = "form-gke-eleve01-4621" # ID du projet GCP de Production
 equipe     = "a"
 region     = "europe-west8" # Milan
-zone       = "europe-west8-a"
+zone       = "europe-west8-b"
 
 
 # --- Paramètres Réseau ---
