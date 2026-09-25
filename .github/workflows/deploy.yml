@@ -47,22 +47,20 @@ jobs:
     steps:
     - name: Récupération du dépôt
       uses: actions/checkout@v5
-    - name: Rapport des vulnérabilités HIGH et CRITICAL
-      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+    - name: Scan Terraform et Kubernetes
+      uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
       with:
-        scan-type: image
-        image-ref: ${{ matrix.image }}
+        scan-type: config
+        scan-ref: .
         format: table
         severity: HIGH,CRITICAL
         exit-code: "0"
-        ignore-unfixed: false
         hide-progress: true
-
     - name: Blocage sur les vulnérabilités CRITICAL
       uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
       with:
-        scan-type: image
-        image-ref: ${{ matrix.image }}
+        scan-type: config
+        scan-ref: .
         format: table
         severity: CRITICAL
         exit-code: "1"
