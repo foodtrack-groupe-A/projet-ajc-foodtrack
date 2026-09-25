@@ -73,4 +73,12 @@ patches:
       path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
       value: 50Gi
 
+- target:
+    kind: Ingress
+    name: ingress-foodtrack
+  patch: |-
+    - op: add
+      path: /metadata/annotations/kubernetes.io~1ingress.global-static-ip-name
+      value: "ingress-foodtrack-prod-ip"
+
 - path: HPA-foodtrack-patch.yaml

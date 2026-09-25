@@ -1,6 +1,0 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ingress-foodtrack
-  annotations:
-    kubernetes.io/ingress.global-static-ip-name: "ingress-foodtrack-dev-ip"
