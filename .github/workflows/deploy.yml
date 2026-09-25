@@ -232,22 +232,20 @@ jobs:
         kubectl rollout status deployment/api-capteurs -n foodtrack-dev --timeout=180s || true
         kubectl rollout status deployment/portail-qualite -n foodtrack-dev --timeout=180s || true
 
-    - name: Vérifier que l'API répond
+    - name: Exécuter le Healthcheck (Lead Exploitation)
       run: |
         SERVICE_PORT=$(kubectl get service "api-capteurs" --namespace="foodtrack-dev" --output=jsonpath='{.spec.ports[0].port}')
         kubectl port-forward "service/api-capteurs" "8080:$SERVICE_PORT" --namespace="foodtrack-dev" > "$RUNNER_TEMP/api-port-forward.log" 2>&1 &
         PORT_FORWARD_PID=$!
+        
         trap 'kill "$PORT_FORWARD_PID" 2>/dev/null || true' EXIT
 
-        for TENTATIVE in {1..12}; do
-          if curl --fail --silent --show-error --max-time 5 "http://127.0.0.1:8080/"; then
-            echo "L'API répond correctement."
-            exit 0
-          fi
-          echo "Tentative $TENTATIVE/12 : API indisponible."
-          sleep 5
-        done
-        exit 1
+        sleep 3
+
+        export API_URL="http://127.0.0.1:8080/health"
+        export MAX_LATENCY_SEC="2.0"
+        
+        python3 scripts/healthcheck.py
 
     - name: Suppression des secrets
       run: |
