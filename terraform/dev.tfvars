@@ -26,3 +26,7 @@ service_account_email = "618189904543-compute@developer.gserviceaccount.com"
 # --- Configuration GitHub / CI-CD ---
 github_owner = "foodtrack-groupe-A"
 github_repo  = "projet-ajc-foodtrack"
+
+# --- Nouveaux identifiants WIF pour éviter le conflit 409 ---
+pool_id     = "github-pool-v2"
+provider_id = "github-provider-v2"
