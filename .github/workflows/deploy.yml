@@ -244,7 +244,9 @@ jobs:
 
         export API_URL="http://127.0.0.1:8080/health"
         export MAX_LATENCY_SEC="2.0"
-        
+        export MAX_TRIES="10"
+        export TRIES_INTERVAL="5"
+
         python3 scripts/healthcheck.py
 
     - name: Suppression des secrets

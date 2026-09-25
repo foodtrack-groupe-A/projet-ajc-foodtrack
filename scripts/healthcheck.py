@@ -3,7 +3,7 @@ import os, sys, time, urllib.request, urllib.error
 
 API_URL = os.environ.get("API_URL", "http://localhost:8080/health")
 MAX_LATENCY = float(os.environ.get("MAX_LATENCY_SEC", "2.0"))
-RETRIES, INTERVAL = 10, 5
+RETRIES, INTERVAL = int(os.environ.get("MAX_TRIES", "10")), int(os.environ.get("TRIES_INTERVAL", "5"))
 
 print(f"=== [HEALTHCHECK] Cible : {API_URL} (Seuil : {MAX_LATENCY}s) ===")
 
