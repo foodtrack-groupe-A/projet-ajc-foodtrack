@@ -66,3 +66,8 @@ variable "environment" {
   description = "Environnement (dev, staging, prod)"
   default     = "dev"
 }
+
+variable "project_id" {
+  type        = string
+  description = "Identifiant du projey"
+}
