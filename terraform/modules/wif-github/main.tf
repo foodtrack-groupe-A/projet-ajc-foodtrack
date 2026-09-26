@@ -25,7 +25,7 @@ data "google_project" "courant" {
 # Il ne donne aucun droit par lui-meme.
 #
 # ATTENTION : la suppression d un pool est differee. L identifiant reste
-# reserve, et recreer le pool sous le meme nom echoue sur :
+# reserve, et recreer le pool sous le meme nom échoue sur :
 #   Error 409: Requested entity already exists
 # Le pool supprime reste visible avec :
 #   gcloud iam workload-identity-pools list --location=global --show-deleted
