@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-foodtrack
+  namespace: foodtrack
+  # utilisation de la façon obsolète car la nouvelle façon provoque un erreur.
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:
+  rules:
+  # host: foodtrack pas de hostname valide pour l'instant
+  - http:
+      paths:
+      # Routage par défaut
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: portail-qualite
+            port:
+              number: 8080

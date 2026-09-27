@@ -1,0 +1,28 @@
+# ==============================================================================
+# TEMPLATE DE CONFIGURATION TERRAFORM (.tfvars)
+# Dupliquez ce fichier en 'dev.tfvars', 'test.tfvars' ou 'prod.tfvars'
+# et renseignez les valeurs propres à votre environnement GCP.
+# ==============================================================================
+
+# --- PARAMÈTRES GLOBAUX ---
+project_id  = "votre-projet-gcp-id"    # ex: foodtrack-dev-123456
+equipe      = "a"                      # Lettre de votre équipe
+region      = "europe-west9"           # Région GCP (Paris)
+zone        = "europe-west9-a"         # Zone GCP
+environment = "dev"                    # dev, test, ou prod
+
+# --- PARAMÈTRES RÉSEAU ---
+subnet_cidr     = "10.0.0.0/20"
+ssh_source_cidr = "0.0.0.0/0"          # À restreindre selon la sécurité (ex: IP VPN)
+
+# --- PARAMÈTRES COMPUTE / BASTION / GKE ---
+bastion_machine_type  = "e2-micro"
+master_cidr           = "172.16.0.0/28"
+node_count            = 1
+machine_type          = "e2-standard-2"
+node_disk_size_gb     = 50
+service_account_email = "618189904543-compute@developer.gserviceaccount.com"
+
+# --- PARAMÈTRES GITHUB / CI-CD ---
+github_owner = "diogeek"
+github_repo  = "projet-ajc-foodtrack"

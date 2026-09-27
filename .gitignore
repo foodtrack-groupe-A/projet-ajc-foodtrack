@@ -1,3 +1,5 @@
+*.env
+
 # Local .terraform directories
 .terraform/
 
@@ -15,6 +17,12 @@ crash.*.log
 # to change depending on the environment.
 *.tfvars
 *.tfvars.json
+
+#Autorise ces 3 .tfvars pour le projet
+!terraform/dev.tfvars
+!terraform/test.tfvars
+!terraform/prod.tfvars
+
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
