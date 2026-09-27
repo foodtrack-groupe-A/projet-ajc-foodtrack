@@ -237,8 +237,8 @@ jobs:
         scan-type: image
         image-ref: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GCP_ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ github.sha }}
         format: table
-        severity: HIGH,CRITICAL
-        exit-code: "0"
+        severity: CRITICAL
+        exit-code: "1"
 
   deploy-dev:
     name: Déploiement dev
