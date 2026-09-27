@@ -146,6 +146,14 @@ Les trois environnements applicatifs sont isolés dans le cluster avec les names
 | Test          | `foodtrack-test` |
 | Production    | `foodtrack-prod` |
 
+Le plan de contrôle du cluster reste joignable depuis n'importe quelle adresse
+publique. La restriction à des réseaux autorisés (`master_authorized_networks_config`)
+a été identifiée comme nécessaire mais n'a pas été mise en œuvre avant la fin du
+projet. L'authentification reste la seule barrière contre un accès non autorisé.
+L'alternative retenue pour une prochaine itération est de restreindre l'accès à
+l'adresse externe du bastion, ou de passer le point de terminaison en privé avec
+un exécuteur GitHub Actions auto-hébergé sur le bastion.
+
 ### State Terraform distant
 
 Le state Terraform est conservé dans un bucket Cloud Storage :
@@ -555,3 +563,97 @@ En ce qui concerne les images, nous avons choisi le même type de sévérité, p
 ## Justification des choix d'implémentation du script de contrôle de santé :
 
 Pour assurer la supervisabilité de l'API capteurs en phase d'exploitation, nous avons développé un script Python autonome qui évalue non seulement la disponibilité globale (statut HTTP 200), mais aussi la qualité de service en mesurant la latence d'exécution. Pour garantir une empreinte mémoire minimale et faciliter son déploiement dans des conteneurs légers ou des CronJobs Kubernetes, le script repose exclusivement sur la bibliothèque standard Python (urllib, time, sys), éliminant ainsi toute dépendance externe. Il suit strictement les normes d'exécution UNIX en renvoyant un code de sortie explicite (0 pour un fonctionnement nominal, 1 en cas de panne applicative ou réseau, et 2 en cas de dégradation de la latence) pour permettre l'interruption immédiate des pipelines CI/CD en cas d'anomalie. Enfin, la paramétrisation dynamique des cibles et des seuils tolérés via des variables d'environnement (API_URL, MAX_LATENCY_SEC) garantit sa réutilisabilité intégrale à travers les différents environnements de déploiement (développement, test, prod).
+
+## Gestion des accès IAM
+
+Chaque identité, humaine ou compte de service, ne reçoit que les rôles
+nécessaires à son domaine. L'état réel des accès se vérifie avec :
+
+```text
+gcloud projects get-iam-policy "$PROJECT" \
+  --flatten="bindings[].members" \
+  --format="table(bindings.role,bindings.members)"
+```
+
+Le compte de service du pipeline (`foodtrack-ci`) est restreint à cinq rôles
+précis, aucun n'étant `roles/editor` ni `roles/owner`. Le compte de service
+par défaut de Compute Engine, utilisé à la fois par le node pool GKE et par
+le bastion, ne porte aucun rôle explicite au niveau du projet, mais reste
+partagé entre deux usages distincts. Deux comptes dédiés sont recommandés
+plutôt qu'une identité commune.
+
+Les quatre membres de l'équipe portent aujourd'hui `roles/editor`, hérité de
+la configuration initiale du projet et jamais revu depuis. Un plan de
+remédiation détaillé, rôle par rôle et commande par commande, se trouve dans
+l'audit de sécurité joint au projet. Il n'a volontairement pas été exécuté
+avant la fin du projet, pour ne pas priver un membre d'un accès encore
+nécessaire.
+
+## Supervision et alerte
+
+Un tableau de bord Cloud Monitoring, dupliqué sur les namespaces
+`foodtrack-prod` et `foodtrack-dev`, regroupe cinq indicateurs : utilisation
+de la limite CPU, utilisation de la limite mémoire, latence backend au 95e
+percentile, nombre de redémarrages de pods, et volume de requêtes.
+
+Deux contrôles de disponibilité surveillent les adresses publiques de
+production et de développement, avec une fréquence de cinq minutes :
+
+```text
+gcloud monitoring uptime list-configs
+```
+
+Une politique d'alerte notifie par email en cas d'échec prolongé du
+contrôle de production. Elle a été testée en modifiant temporairement le
+chemin surveillé vers une route inexistante, ce qui a provoqué un échec
+constaté et une notification effective. Le test a également révélé une
+politique d'alerte créée automatiquement par Cloud Monitoring, faisant
+doublon avec la politique documentée ; elle a été supprimée.
+
+## Scripts d'exploitation
+
+Quatre scripts assurent l'exploitation courante du projet, dans `scripts/` :
+
+| Script | Rôle | Commande |
+| --- | --- | --- |
+| `backup-config.sh` | Exporte les ressources Kubernetes de tous les namespaces vers une archive horodatée, envoyée dans le bucket de sauvegarde | `./scripts/backup-config.sh` |
+| `purge-logs.sh` | Doit purger les exports de journaux de plus de 30 jours | `./scripts/purge-logs.sh` |
+| `scale-cluster.sh` | Redimensionne le node pool à zéro ou un nœud | `./scripts/scale-cluster.sh stop` ou `start` |
+| `healthcheck.py` | Contrôle la disponibilité et la latence de l'API, code de sortie 0/1/2 exploitable en pipeline | `python3 scripts/healthcheck.py` |
+
+`purge-logs.sh` calcule une date de coupure à 30 jours mais ne l'applique
+pas : la commande exécutée supprime l'intégralité du contenu du dossier
+`logs/`, sans condition d'âge. La rétention à 30 jours annoncée est en
+réalité assurée par la règle de cycle de vie du bucket Cloud Storage
+(section Module `stockage`), pas par ce script. À corriger ou, à défaut, à
+garder documenté tel quel.
+
+`scale-cluster.sh start` remet le pool à un seul nœud, alors que le
+dimensionnement de référence Terraform en prévoit deux. Un `terraform apply`
+reste nécessaire pour revenir au dimensionnement complet après une
+extinction prolongée.
+
+## Analyse de coût
+
+L'estimation combine le calculateur officiel Google Cloud (tarifs
+europe-west8) et l'inventaire réel des ressources du projet.
+
+| Poste | Détail | Continu / usage | Coût mensuel |
+| --- | --- | --- | --- |
+| Nœuds GKE | 2× e2-standard-2 | Continu | ≈ 99 € |
+| Load Balancer / Ingress | 3 règles de forwarding globales | Continu | ≈ 48 € |
+| Cloud NAT | 1 passerelle + trafic traité | Continu + usage | ≈ 26 € |
+| Bastion | 1× e2-micro | Continu | ≈ 8 € |
+| Disques des nœuds | 2× pd-standard 50 Go | Continu | ≈ 6 € |
+| Volumes Redis | 3× pd-standard 10 Gi | Continu | ≈ 3 € |
+| Buckets et Artifact Registry | 79 Ko de state, 26,6 Mo d'images | Usage | < 0,01 € |
+| **Total, fonctionnement continu** | | | **≈ 191 €/mois** |
+
+Le Load Balancer représente à lui seul près de la moitié du coût des nœuds,
+simplement parce qu'une règle de forwarding globale existe pour chacun des
+trois environnements. Ce coût continue de courir même nœuds éteints.
+
+Seul le coût des nœuds est réduit par `scale-cluster.sh`. Sur la base d'un
+fonctionnement limité aux heures ouvrées (10 heures par jour, 5 jours par
+semaine), le coût total descend à environ 122 €/mois, soit une réduction
+d'environ 36 %.
